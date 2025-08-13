@@ -73,13 +73,25 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
         _availableVoices = [];
       }
 
-      final best = _chooseBestChineseVoice(_availableVoices);
+      // 先尝试用户指定的优选默认声音
+      const preferredName = 'cmn-cn-x-cce-local';
+      Map<String, dynamic>? preferred;
+      try {
+        final dynamic raw = _availableVoices
+            .whereType<Map>()
+            .firstWhere((v) => v['name']?.toString() == preferredName, orElse: () => <String, dynamic>{});
+        if (raw is Map) {
+          final map = Map<String, dynamic>.from(raw);
+          preferred = map.isEmpty ? null : map;
+        }
+      } catch (_) {
+        preferred = null;
+      }
+
+      final best = preferred ?? _chooseBestChineseVoice(_availableVoices);
       if (best != null) {
         _selectedVoiceName = best['name']?.toString();
-        await _flutterTts.setVoice({
-          'name': best['name'],
-          'locale': best['locale'],
-        });
+        await _flutterTts.setVoice({'name': best['name'], 'locale': best['locale']});
       }
       setState(() {});
     } catch (_) {
