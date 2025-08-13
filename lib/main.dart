@@ -239,62 +239,54 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
               ),
             ),
 
-            // BPM 控制
-            Text('速度 (BPM): $_bpm', style: Theme.of(context).textTheme.titleMedium),
-            Slider(
-              value: _bpm.toDouble(),
-              min: 30,
-              max: 160,
-              divisions: 130,
-              label: _bpm.toString(),
-              onChanged: (v) => _updateBpm(v),
-            ),
-
-            // 快捷步进按钮，便于精细/快速调节（自适应换行，避免溢出）
-            Row(
-              children: [
-                Expanded(
-                  child: Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      OutlinedButton(
-                        onPressed: () => _updateBpm((_bpm - 5).toDouble()),
-                        child: const Text('-5'),
-                      ),
-                      OutlinedButton(
-                        onPressed: () => _updateBpm((_bpm - 3).toDouble()),
-                        child: const Text('-3'),
-                      ),
-                      OutlinedButton(
-                        onPressed: () => _updateBpm((_bpm - 1).toDouble()),
-                        child: const Text('-1'),
-                      ),
-                      OutlinedButton(
-                        onPressed: () => _updateBpm((_bpm + 1).toDouble()),
-                        child: const Text('+1'),
-                      ),
-                      OutlinedButton(
-                        onPressed: () => _updateBpm((_bpm + 3).toDouble()),
-                        child: const Text('+3'),
-                      ),
-                      OutlinedButton(
-                        onPressed: () => _updateBpm((_bpm + 5).toDouble()),
-                        child: const Text('+5'),
-                      ),
-                    ],
-                  ),
+            // BPM 控制（美化：放入卡片，按钮平铺）
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text('速度 (BPM): $_bpm', style: Theme.of(context).textTheme.titleLarge),
+                    Slider(
+                      value: _bpm.toDouble(),
+                      min: 30,
+                      max: 160,
+                      divisions: 130,
+                      label: _bpm.toString(),
+                      onChanged: (v) => _updateBpm(v),
+                    ),
+                    const SizedBox(height: 4),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        const double spacing = 8;
+                        const int columns = 3; // 平铺成三列，两行
+                        final double buttonWidth = (constraints.maxWidth - (columns - 1) * spacing) / columns;
+                        Widget tile(String label, void Function() onTap) {
+                          return SizedBox(
+                            width: buttonWidth,
+                            child: FilledButton.tonal(
+                              onPressed: onTap,
+                              child: Text(label),
+                            ),
+                          );
+                        }
+                        return Wrap(
+                          spacing: spacing,
+                          runSpacing: spacing,
+                          children: [
+                            tile('-5', () => _updateBpm((_bpm - 5).toDouble())),
+                            tile('-3', () => _updateBpm((_bpm - 3).toDouble())),
+                            tile('-1', () => _updateBpm((_bpm - 1).toDouble())),
+                            tile('+1', () => _updateBpm((_bpm + 1).toDouble())),
+                            tile('+3', () => _updateBpm((_bpm + 3).toDouble())),
+                            tile('+5', () => _updateBpm((_bpm + 5).toDouble())),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    '范围 30-160',
-                    textAlign: TextAlign.right,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-              ],
+              ),
             ),
 
             const SizedBox(height: 8),
