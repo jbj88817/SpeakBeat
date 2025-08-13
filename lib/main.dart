@@ -34,7 +34,7 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
 
   Timer? _timer;
   int _bpm = 60; // 速度（每分钟拍数）
-  int _beatsPerBar = 4; // 每小节拍数
+  int _beatsPerBar = 8; // 每小节拍数（默认8拍）
   int _currentBeat = 1;
   bool _isRunning = false;
   List<dynamic> _availableVoices = [];
@@ -161,7 +161,7 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
   }
 
   void _updateBpm(double value) {
-    final next = value.round().clamp(30, 240);
+    final next = value.round().clamp(30, 160);
     final needRestart = _isRunning;
     _timer?.cancel();
     setState(() {
@@ -232,10 +232,39 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
             Slider(
               value: _bpm.toDouble(),
               min: 30,
-              max: 240,
-              divisions: 210,
+              max: 160,
+              divisions: 130,
               label: _bpm.toString(),
               onChanged: (v) => _updateBpm(v),
+            ),
+
+            // 快捷步进按钮，便于精细/快速调节
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    OutlinedButton(
+                      onPressed: () => _updateBpm((_bpm - 5).toDouble()),
+                      child: const Text('-5'),
+                    ),
+                    OutlinedButton(
+                      onPressed: () => _updateBpm((_bpm - 1).toDouble()),
+                      child: const Text('-1'),
+                    ),
+                    OutlinedButton(
+                      onPressed: () => _updateBpm((_bpm + 1).toDouble()),
+                      child: const Text('+1'),
+                    ),
+                    OutlinedButton(
+                      onPressed: () => _updateBpm((_bpm + 5).toDouble()),
+                      child: const Text('+5'),
+                    ),
+                  ],
+                ),
+                Text('范围 30-160', style: Theme.of(context).textTheme.bodySmall),
+              ],
             ),
 
             const SizedBox(height: 8),
