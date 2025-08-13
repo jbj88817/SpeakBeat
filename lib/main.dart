@@ -251,12 +251,20 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
                         child: const Text('-5'),
                       ),
                       OutlinedButton(
+                        onPressed: () => _updateBpm((_bpm - 3).toDouble()),
+                        child: const Text('-3'),
+                      ),
+                      OutlinedButton(
                         onPressed: () => _updateBpm((_bpm - 1).toDouble()),
                         child: const Text('-1'),
                       ),
                       OutlinedButton(
                         onPressed: () => _updateBpm((_bpm + 1).toDouble()),
                         child: const Text('+1'),
+                      ),
+                      OutlinedButton(
+                        onPressed: () => _updateBpm((_bpm + 3).toDouble()),
+                        child: const Text('+3'),
                       ),
                       OutlinedButton(
                         onPressed: () => _updateBpm((_bpm + 5).toDouble()),
