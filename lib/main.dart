@@ -38,7 +38,8 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
   int _currentBeat = 1;
   bool _isRunning = false;
   List<dynamic> _availableVoices = [];
-  String? _selectedVoiceName;
+  String? _selectedVoiceName; // for display (may be shown later)
+  String? _selectedVoiceKey; // unique key: name-locale
 
   @override
   void initState() {
@@ -79,7 +80,11 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
       try {
         final dynamic raw = _availableVoices
             .whereType<Map>()
-            .firstWhere((v) => v['name']?.toString() == preferredName, orElse: () => <String, dynamic>{});
+            .firstWhere(
+              (v) => v['name']?.toString() == preferredName &&
+                  (v['locale']?.toString().toLowerCase().startsWith('zh') ?? false),
+              orElse: () => <String, dynamic>{},
+            );
         if (raw is Map) {
           final map = Map<String, dynamic>.from(raw);
           preferred = map.isEmpty ? null : map;
@@ -91,6 +96,7 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
       final best = preferred ?? _chooseBestChineseVoice(_availableVoices);
       if (best != null) {
         _selectedVoiceName = best['name']?.toString();
+        _selectedVoiceKey = _voiceKey(best);
         await _flutterTts.setVoice({'name': best['name'], 'locale': best['locale']});
       }
       setState(() {});
@@ -126,6 +132,8 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
     // 3) 退化：选择第一个中文声音
     return Map<String, dynamic>.from(candidates.first);
   }
+
+  String _voiceKey(Map v) => '${v['name']}-${v['locale']}';
 
   Duration get _beatInterval {
     final milliseconds = (60000 / _bpm).round();
@@ -197,14 +205,15 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
     });
   }
 
-  Future<void> _onVoiceChanged(String? voiceName) async {
-    if (voiceName == null) return;
+  Future<void> _onVoiceKeyChanged(String? voiceKey) async {
+    if (voiceKey == null) return;
     final match = _availableVoices
         .whereType<Map>()
-        .firstWhere((v) => v['name']?.toString() == voiceName, orElse: () => {});
+        .firstWhere((v) => _voiceKey(v) == voiceKey, orElse: () => {});
     if (match.isEmpty) return;
     setState(() {
-      _selectedVoiceName = voiceName;
+      _selectedVoiceKey = voiceKey;
+      _selectedVoiceName = match['name']?.toString();
     });
     try {
       await _flutterTts.setVoice({'name': match['name'], 'locale': match['locale']});
@@ -323,17 +332,17 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
                   child: Align(
                     alignment: Alignment.centerRight,
                     child: DropdownButton<String>(
-                      value: _selectedVoiceName,
+                      value: _selectedVoiceKey,
                       hint: const Text('自动选择'),
                       items: _availableVoices
                           .whereType<Map>()
                           .where((v) => v['locale'] != null && v['locale'].toString().toLowerCase().startsWith('zh'))
                           .map((v) => DropdownMenuItem<String>(
-                                value: v['name']?.toString(),
+                                value: _voiceKey(v),
                                 child: Text(v['name']?.toString() ?? ''),
                               ))
                           .toList(),
-                      onChanged: _onVoiceChanged,
+                      onChanged: _onVoiceKeyChanged,
                     ),
                   ),
                 ),
