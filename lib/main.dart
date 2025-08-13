@@ -37,6 +37,8 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
   int _beatsPerBar = 4; // 每小节拍数
   int _currentBeat = 1;
   bool _isRunning = false;
+  List<dynamic> _availableVoices = [];
+  String? _selectedVoiceName;
 
   @override
   void initState() {
@@ -48,11 +50,69 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
     // 中文语音
     await _flutterTts.setLanguage('zh-CN');
     // 保持较自然的语速（0.0 - 1.0，平台相关）
-    await _flutterTts.setSpeechRate(0.45);
+    await _flutterTts.setSpeechRate(0.40);
     await _flutterTts.setVolume(1.0);
-    await _flutterTts.setPitch(1.0);
+    await _flutterTts.setPitch(1.05);
     // 我们用定时器保证节拍，不等待说话完成
     await _flutterTts.awaitSpeakCompletion(false);
+
+    // 尝试使用 Google TTS 引擎（Android），以获取更自然的声音
+    try {
+      await _flutterTts.setEngine('com.google.android.tts');
+    } catch (_) {}
+
+    await _loadVoicesAndSelectBest();
+  }
+
+  Future<void> _loadVoicesAndSelectBest() async {
+    try {
+      final voices = await _flutterTts.getVoices;
+      if (voices is List) {
+        _availableVoices = voices;
+      } else {
+        _availableVoices = [];
+      }
+
+      final best = _chooseBestChineseVoice(_availableVoices);
+      if (best != null) {
+        _selectedVoiceName = best['name']?.toString();
+        await _flutterTts.setVoice({
+          'name': best['name'],
+          'locale': best['locale'],
+        });
+      }
+      setState(() {});
+    } catch (_) {
+      // 忽略异常，继续使用默认语言配置
+    }
+  }
+
+  Map<String, dynamic>? _chooseBestChineseVoice(List<dynamic> voices) {
+    final candidates = voices
+        .whereType<Map>()
+        .where((v) => v['locale'] != null && v['locale'].toString().toLowerCase().startsWith('zh'))
+        .toList();
+    if (candidates.isEmpty) return null;
+
+    // 1) 优先包含 female 关键词
+    final female = candidates.firstWhere(
+      (v) => v['name'] != null && v['name'].toString().toLowerCase().contains('female'),
+      orElse: () => {},
+    );
+    if (female.isNotEmpty) return Map<String, dynamic>.from(female);
+
+    // 2) 其次尝试常见的女声标识（不严格，仅作启发式）
+    final hints = ['-a', 'f1', 'f2', 'woman', 'girl'];
+    for (final h in hints) {
+      final found = candidates.firstWhere(
+        (v) => v['name'] != null && v['name'].toString().toLowerCase().contains(h),
+        orElse: () => {},
+      );
+      if (found.isNotEmpty) return Map<String, dynamic>.from(found);
+    }
+
+    // 3) 退化：选择第一个中文声音
+    return Map<String, dynamic>.from(candidates.first);
   }
 
   Duration get _beatInterval {
@@ -125,6 +185,20 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
     });
   }
 
+  Future<void> _onVoiceChanged(String? voiceName) async {
+    if (voiceName == null) return;
+    final match = _availableVoices
+        .whereType<Map>()
+        .firstWhere((v) => v['name']?.toString() == voiceName, orElse: () => {});
+    if (match.isEmpty) return;
+    setState(() {
+      _selectedVoiceName = voiceName;
+    });
+    try {
+      await _flutterTts.setVoice({'name': match['name'], 'locale': match['locale']});
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -182,6 +256,35 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
                   onChanged: (v) {
                     if (v != null) _updateBeatsPerBar(v);
                   },
+                ),
+              ],
+            ),
+
+          const SizedBox(height: 8),
+
+          // 声音选择（可选）
+          if (_availableVoices.isNotEmpty)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('声音'),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: DropdownButton<String>(
+                      value: _selectedVoiceName,
+                      hint: const Text('自动选择'),
+                      items: _availableVoices
+                          .whereType<Map>()
+                          .where((v) => v['locale'] != null && v['locale'].toString().toLowerCase().startsWith('zh'))
+                          .map((v) => DropdownMenuItem<String>(
+                                value: v['name']?.toString(),
+                                child: Text(v['name']?.toString() ?? ''),
+                              ))
+                          .toList(),
+                      onChanged: _onVoiceChanged,
+                    ),
+                  ),
                 ),
               ],
             ),
