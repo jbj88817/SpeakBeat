@@ -238,32 +238,42 @@ class _SpeakBeatHomePageState extends State<SpeakBeatHomePage> {
               onChanged: (v) => _updateBpm(v),
             ),
 
-            // 快捷步进按钮，便于精细/快速调节
+            // 快捷步进按钮，便于精细/快速调节（自适应换行，避免溢出）
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () => _updateBpm((_bpm - 5).toDouble()),
-                      child: const Text('-5'),
-                    ),
-                    OutlinedButton(
-                      onPressed: () => _updateBpm((_bpm - 1).toDouble()),
-                      child: const Text('-1'),
-                    ),
-                    OutlinedButton(
-                      onPressed: () => _updateBpm((_bpm + 1).toDouble()),
-                      child: const Text('+1'),
-                    ),
-                    OutlinedButton(
-                      onPressed: () => _updateBpm((_bpm + 5).toDouble()),
-                      child: const Text('+5'),
-                    ),
-                  ],
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton(
+                        onPressed: () => _updateBpm((_bpm - 5).toDouble()),
+                        child: const Text('-5'),
+                      ),
+                      OutlinedButton(
+                        onPressed: () => _updateBpm((_bpm - 1).toDouble()),
+                        child: const Text('-1'),
+                      ),
+                      OutlinedButton(
+                        onPressed: () => _updateBpm((_bpm + 1).toDouble()),
+                        child: const Text('+1'),
+                      ),
+                      OutlinedButton(
+                        onPressed: () => _updateBpm((_bpm + 5).toDouble()),
+                        child: const Text('+5'),
+                      ),
+                    ],
+                  ),
                 ),
-                Text('范围 30-160', style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    '范围 30-160',
+                    textAlign: TextAlign.right,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
               ],
             ),
 
